@@ -1,1 +1,4 @@
 project_id = "idswdxqpieqwgnbgyscm"
+
+[functions.career-recommendations]
+verify_jwt = false

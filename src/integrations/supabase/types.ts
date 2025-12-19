@@ -14,7 +14,204 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_answers: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question_id: string | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question_id?: string | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question_id?: string | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_questions: {
+        Row: {
+          created_at: string
+          id: string
+          options: string[] | null
+          order_index: number
+          question: string
+          related_careers: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          options?: string[] | null
+          order_index?: number
+          question: string
+          related_careers?: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          options?: string[] | null
+          order_index?: number
+          question?: string
+          related_careers?: string[]
+        }
+        Relationships: []
+      }
+      career_recommendations: {
+        Row: {
+          algorithm_used: string
+          career_id: string | null
+          created_at: string
+          id: string
+          match_score: number
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          algorithm_used?: string
+          career_id?: string | null
+          created_at?: string
+          id?: string
+          match_score: number
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          algorithm_used?: string
+          career_id?: string | null
+          created_at?: string
+          id?: string
+          match_score?: number
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_recommendations_career_id_fkey"
+            columns: ["career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      careers: {
+        Row: {
+          category: Database["public"]["Enums"]["career_category"]
+          courses: string[]
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          roadmap: string[]
+          skills: string[]
+          title: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["career_category"]
+          courses?: string[]
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          roadmap?: string[]
+          skills?: string[]
+          title: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["career_category"]
+          courses?: string[]
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          roadmap?: string[]
+          skills?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          education_level: string | null
+          id: string
+          interests: string[] | null
+          name: string | null
+          preferred_subjects: string[] | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          education_level?: string | null
+          id?: string
+          interests?: string[] | null
+          name?: string | null
+          preferred_subjects?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          education_level?: string | null
+          id?: string
+          interests?: string[] | null
+          name?: string | null
+          preferred_subjects?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      saved_careers: {
+        Row: {
+          career_id: string | null
+          id: string
+          saved_at: string
+          user_id: string | null
+        }
+        Insert: {
+          career_id?: string | null
+          id?: string
+          saved_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          career_id?: string | null
+          id?: string
+          saved_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_careers_career_id_fkey"
+            columns: ["career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +220,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      career_category:
+        | "technology"
+        | "healthcare"
+        | "business"
+        | "creative"
+        | "science"
+        | "education"
+        | "trades"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +354,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      career_category: [
+        "technology",
+        "healthcare",
+        "business",
+        "creative",
+        "science",
+        "education",
+        "trades",
+      ],
+    },
   },
 } as const
