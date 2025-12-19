@@ -3,6 +3,7 @@ export interface UserProfile {
   class: string;
   subjects: SubjectMark[];
   interests: string[];
+  customInterest?: string;
 }
 
 export interface SubjectMark {

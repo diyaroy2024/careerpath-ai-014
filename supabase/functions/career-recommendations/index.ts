@@ -10,6 +10,7 @@ interface UserProfile {
   interests: string[];
   preferredSubjects: string[];
   educationLevel: string;
+  customInterest?: string;
 }
 
 interface AssessmentAnswer {
@@ -49,9 +50,15 @@ const INTEREST_CATEGORIES = [
 function createUserVector(profile: UserProfile, answers: AssessmentAnswer[]): number[] {
   const features: number[] = [];
   
+  // Include custom interest in the interests list for matching
+  const allInterests = [...profile.interests];
+  if (profile.customInterest) {
+    allInterests.push(profile.customInterest);
+  }
+  
   // Skill preference features (10 dimensions)
   SKILL_CATEGORIES.forEach(skill => {
-    const hasInterest = profile.interests.some(i => 
+    const hasInterest = allInterests.some(i => 
       i.toLowerCase().includes(skill) || skill.includes(i.toLowerCase())
     );
     const hasSubject = profile.preferredSubjects.some(s => 
@@ -63,7 +70,7 @@ function createUserVector(profile: UserProfile, answers: AssessmentAnswer[]): nu
   
   // Interest category features (10 dimensions)
   INTEREST_CATEGORIES.forEach(category => {
-    const matchCount = profile.interests.filter(i => 
+    const matchCount = allInterests.filter(i => 
       i.toLowerCase().includes(category) || category.includes(i.toLowerCase())
     ).length;
     features.push(Math.min(matchCount / 3, 1));
@@ -164,33 +171,39 @@ function buildDecisionTree(profile: UserProfile, answers: AssessmentAnswer[]): s
   
   const predictions: string[] = [];
   
+  // Include custom interest in matching
+  const allInterests = [...profile.interests];
+  if (profile.customInterest) {
+    allInterests.push(profile.customInterest);
+  }
+  
   // Rule-based decision tree logic
-  const hasTechInterest = profile.interests.some(i => 
-    ['technology', 'programming', 'coding', 'software', 'computer'].some(t => 
+  const hasTechInterest = allInterests.some(i => 
+    ['technology', 'programming', 'coding', 'software', 'computer', 'robotics', 'ai', 'machine learning'].some(t => 
       i.toLowerCase().includes(t)
     )
   );
   
-  const hasCreativeInterest = profile.interests.some(i => 
-    ['art', 'design', 'creative', 'music', 'writing'].some(t => 
+  const hasCreativeInterest = allInterests.some(i => 
+    ['art', 'design', 'creative', 'music', 'writing', 'photography', 'video', 'animation'].some(t => 
       i.toLowerCase().includes(t)
     )
   );
   
-  const hasBusinessInterest = profile.interests.some(i => 
-    ['business', 'finance', 'marketing', 'management', 'economics'].some(t => 
+  const hasBusinessInterest = allInterests.some(i => 
+    ['business', 'finance', 'marketing', 'management', 'economics', 'entrepreneur', 'startup'].some(t => 
       i.toLowerCase().includes(t)
     )
   );
   
-  const hasHealthcareInterest = profile.interests.some(i => 
-    ['health', 'medicine', 'biology', 'nursing', 'care'].some(t => 
+  const hasHealthcareInterest = allInterests.some(i => 
+    ['health', 'medicine', 'biology', 'nursing', 'care', 'psychology', 'therapy'].some(t => 
       i.toLowerCase().includes(t)
     )
   );
   
-  const hasScienceInterest = profile.interests.some(i => 
-    ['science', 'research', 'physics', 'chemistry', 'math'].some(t => 
+  const hasScienceInterest = allInterests.some(i => 
+    ['science', 'research', 'physics', 'chemistry', 'math', 'astronomy', 'space', 'environment'].some(t => 
       i.toLowerCase().includes(t)
     )
   );
