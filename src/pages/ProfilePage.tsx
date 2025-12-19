@@ -18,7 +18,7 @@ const subjects = [
 
 const interestOptions = [
   "Technology", "Art & Design", "Writing", "Science", "Business",
-  "Teaching", "Social Work", "Gaming", "Film & Video", "Fashion"
+  "Teaching", "Social Work", "Gaming", "Film & Video", "Fashion", "Others"
 ];
 
 const ProfilePage = () => {
@@ -31,6 +31,7 @@ const ProfilePage = () => {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [marks, setMarks] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [customInterest, setCustomInterest] = useState("");
 
   const addSubject = () => {
     if (!selectedSubject || !marks) {
@@ -87,7 +88,8 @@ const ProfilePage = () => {
       name: name.trim(),
       class: studentClass,
       subjects: subjectMarks,
-      interests
+      interests,
+      ...(interests.includes("Others") && customInterest.trim() && { customInterest: customInterest.trim() })
     };
     
     setUserProfile(profile);
@@ -220,7 +222,7 @@ const ProfilePage = () => {
               Your Interests
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
               {interestOptions.map(interest => (
                 <Badge
@@ -237,7 +239,21 @@ const ProfilePage = () => {
                 </Badge>
               ))}
             </div>
-            <p className="text-sm text-muted-foreground mt-4">Select 2-5 interests that excite you</p>
+            
+            {interests.includes("Others") && (
+              <div className="space-y-2">
+                <Label htmlFor="customInterest">Describe your interest</Label>
+                <Input
+                  id="customInterest"
+                  placeholder="E.g., Robotics, Astronomy, Music Production..."
+                  value={customInterest}
+                  onChange={(e) => setCustomInterest(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+            )}
+            
+            <p className="text-sm text-muted-foreground">Select 2-5 interests that excite you</p>
           </CardContent>
         </Card>
 
