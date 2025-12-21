@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import WelcomePage from "./pages/WelcomePage";
+import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import AssessmentPage from "./pages/AssessmentPage";
 import ResultsPage from "./pages/ResultsPage";
@@ -16,23 +19,46 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AppProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<WelcomePage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/assessment" element={<AssessmentPage />} />
-            <Route path="/results" element={<ResultsPage />} />
-            <Route path="/career/:careerId" element={<CareerDetailsPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<WelcomePage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/assessment" element={
+                <ProtectedRoute>
+                  <AssessmentPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/results" element={
+                <ProtectedRoute>
+                  <ResultsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/career/:careerId" element={
+                <ProtectedRoute>
+                  <CareerDetailsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AppProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

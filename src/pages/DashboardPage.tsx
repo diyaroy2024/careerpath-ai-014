@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppContext } from "@/context/AppContext";
+import { useAuth } from "@/hooks/useAuth";
 import { careers } from "@/data/careers";
 import { 
   Sparkles, 
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { userProfile, savedCareers, removeSavedCareer, resetAssessment, results } = useAppContext();
+  const { signOut, user } = useAuth();
 
   const savedCareerDetails = savedCareers.map(sc => {
     const career = careers.find(c => c.id === sc.careerId);
@@ -35,11 +37,14 @@ const DashboardPage = () => {
     toast.success("Assessment reset! Let's begin again.");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     resetAssessment();
     navigate('/');
     toast.success("Logged out successfully");
   };
+  
+  const displayName = userProfile?.name || user?.user_metadata?.name || "User";
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,11 +64,11 @@ const DashboardPage = () => {
 
           <div className="mt-8 flex items-center gap-4">
             <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
-              {userProfile?.name?.charAt(0).toUpperCase() || "U"}
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div>
               <h1 className="text-2xl font-bold text-secondary-foreground">
-                Welcome back, {userProfile?.name || "User"}!
+                Welcome back, {displayName}!
               </h1>
               <p className="text-muted-foreground">
                 {userProfile?.class} • {userProfile?.interests?.length || 0} interests

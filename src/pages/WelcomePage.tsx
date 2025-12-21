@@ -1,9 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Target, Brain, Rocket } from "lucide-react";
+import { Sparkles, Target, Brain, Rocket, LogIn, UserPlus } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const WelcomePage = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (user && !loading) {
+      navigate('/profile');
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col">
@@ -14,9 +23,29 @@ const WelcomePage = () => {
       </div>
 
       <header className="relative z-10 p-6">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-8 h-8 text-primary" />
-          <span className="text-xl font-bold text-secondary-foreground">CareerPath AI</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-8 h-8 text-primary" />
+            <span className="text-xl font-bold text-secondary-foreground">CareerPath AI</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/auth')}
+              className="text-secondary-foreground hover:bg-secondary/20"
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/auth')}
+              className="border-primary/30 text-secondary-foreground hover:bg-primary/10"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Sign Up
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -39,7 +68,7 @@ const WelcomePage = () => {
           <Button
             variant="hero"
             size="xl"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/auth')}
             className="group"
           >
             <span>Get Started</span>
