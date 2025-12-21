@@ -79,8 +79,8 @@ const ProfilePage = () => {
       toast.error("Please add at least 3 subjects");
       return;
     }
-    if (interests.length < 2) {
-      toast.error("Please select at least 2 interests");
+    if (interests.length < 1) {
+      toast.error("Please select at least 1 interest");
       return;
     }
 
@@ -253,7 +253,7 @@ const ProfilePage = () => {
               </div>
             )}
             
-            <p className="text-sm text-muted-foreground">Select 2-5 interests that excite you</p>
+            <p className="text-sm text-muted-foreground">Select 1-5 interests that excite you</p>
           </CardContent>
         </Card>
 
