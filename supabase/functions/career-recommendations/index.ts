@@ -252,50 +252,84 @@ function hybridRecommend(
 ): { careerId: string; score: number; algorithm: string }[] {
   console.log('Starting hybrid recommendation engine');
   
-  // Get KNN recommendations
-  const knnResults = knnRecommend(userVector, careerVectors, Math.min(topN * 2, careerVectors.length));
+  // Get KNN recommendations - get all careers for proper scoring
+  const knnResults = knnRecommend(userVector, careerVectors, careerVectors.length);
   
   // Get Decision Tree predictions
   const dtPredictions = buildDecisionTree(profile, answers);
   
   // Combine results with weighted scoring
-  const scoreMap: Record<string, { score: number; algorithms: string[] }> = {};
+  const scoreMap: Record<string, { score: number; algorithms: string[]; knnRank: number; dtRank: number }> = {};
   
-  // KNN scores (inverse of distance, normalized)
-  const maxDistance = Math.max(...knnResults.map(r => r.distance), 1);
+  // Find min and max distances for better normalization
+  const distances = knnResults.map(r => r.distance);
+  const minDistance = Math.min(...distances);
+  const maxDistance = Math.max(...distances);
+  const distanceRange = maxDistance - minDistance || 1;
+  
+  // KNN scores - use exponential decay for better score distribution
   knnResults.forEach((result, index) => {
-    const normalizedScore = 1 - (result.distance / maxDistance);
-    const positionBonus = 1 - (index / knnResults.length) * 0.3;
+    // Normalize distance to 0-1 range (0 = closest, 1 = farthest)
+    const normalizedDistance = (result.distance - minDistance) / distanceRange;
+    
+    // Convert to similarity score with exponential boost for top matches
+    // This gives much higher scores to close matches
+    const similarityScore = Math.exp(-normalizedDistance * 2);
+    
+    // Add rank-based bonus (top positions get extra boost)
+    const rankBonus = Math.max(0, 1 - (index / 5) * 0.2); // Top 5 get bonus
     
     if (!scoreMap[result.careerId]) {
-      scoreMap[result.careerId] = { score: 0, algorithms: [] };
+      scoreMap[result.careerId] = { score: 0, algorithms: [], knnRank: -1, dtRank: -1 };
     }
-    scoreMap[result.careerId].score += normalizedScore * positionBonus * 0.6; // 60% weight for KNN
+    scoreMap[result.careerId].score += similarityScore * rankBonus * 55; // Base KNN contribution
     scoreMap[result.careerId].algorithms.push('knn');
+    scoreMap[result.careerId].knnRank = index;
   });
   
-  // Decision Tree scores
+  // Decision Tree scores - boost careers that match user interests directly
   dtPredictions.forEach((careerId, index) => {
-    const positionScore = 1 - (index / dtPredictions.length) * 0.5;
+    // Higher scores for earlier predictions (more relevant)
+    const relevanceScore = Math.max(0.6, 1 - (index / dtPredictions.length) * 0.5);
     
     if (!scoreMap[careerId]) {
-      scoreMap[careerId] = { score: 0, algorithms: [] };
+      scoreMap[careerId] = { score: 0, algorithms: [], knnRank: -1, dtRank: -1 };
     }
-    scoreMap[careerId].score += positionScore * 0.4; // 40% weight for Decision Tree
+    scoreMap[careerId].score += relevanceScore * 45; // Base DT contribution
     scoreMap[careerId].algorithms.push('decision_tree');
+    scoreMap[careerId].dtRank = index;
   });
   
-  // Convert to array and sort
+  // Apply synergy bonus when both algorithms agree
+  Object.values(scoreMap).forEach(data => {
+    if (data.algorithms.includes('knn') && data.algorithms.includes('decision_tree')) {
+      // Boost score when both algorithms recommend the same career
+      const synergyBonus = 15;
+      data.score += synergyBonus;
+      console.log('Applied synergy bonus for dual-algorithm match');
+    }
+  });
+  
+  // Convert to array and normalize scores to 0-100 range
+  const allScores = Object.values(scoreMap).map(d => d.score);
+  const maxScore = Math.max(...allScores);
+  const minScore = Math.min(...allScores);
+  const scoreRange = maxScore - minScore || 1;
+  
   const recommendations = Object.entries(scoreMap)
-    .map(([careerId, data]) => ({
-      careerId,
-      score: Math.min(data.score * 100, 100), // Normalize to 0-100
-      algorithm: data.algorithms.join('+')
-    }))
+    .map(([careerId, data]) => {
+      // Normalize to 45-98 range (no one gets 100%, minimum meaningful score is 45%)
+      const normalizedScore = ((data.score - minScore) / scoreRange) * 53 + 45;
+      return {
+        careerId,
+        score: Math.round(Math.min(normalizedScore, 98)),
+        algorithm: data.algorithms.join('+')
+      };
+    })
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
   
-  console.log(`Hybrid recommendations: ${recommendations.length} careers`);
+  console.log(`Hybrid recommendations: ${recommendations.length} careers, scores: ${recommendations.map(r => r.score).join(', ')}`);
   return recommendations;
 }
 
