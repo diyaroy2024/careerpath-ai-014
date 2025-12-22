@@ -78,7 +78,11 @@ export function calculateCareerMatches(
     "Fashion": ["fashion-designer"]
   };
 
-  profile.interests.forEach(interest => {
+  const allInterests = profile.customInterest
+    ? [...profile.interests, profile.customInterest]
+    : profile.interests;
+
+  allInterests.forEach(interest => {
     const relatedCareers = interestCareerMap[interest];
     if (relatedCareers) {
       relatedCareers.forEach(careerId => {
@@ -86,11 +90,40 @@ export function calculateCareerMatches(
           careerScores[careerId] += 8; // Interest bonus
         }
       });
+      return;
     }
+
+    // If it's a custom interest (or an unmapped interest), do a lightweight keyword match
+    const keyword = interest.trim().toLowerCase();
+    if (!keyword) return;
+
+    careers.forEach(career => {
+      const matches =
+        career.title.toLowerCase().includes(keyword) ||
+        career.description.toLowerCase().includes(keyword) ||
+        career.skills.some(s => s.toLowerCase().includes(keyword));
+
+      if (matches) {
+        careerScores[career.id] += 6; // slightly lower than mapped interest
+      }
+    });
   });
 
-  // Calculate max possible score for normalization
-  const maxPossibleScore = (20 * 10) + 20 + 40; // questions + subjects + interests
+  // Calculate max possible score dynamically based on the user's actual inputs
+  // This avoids artificially low percentages when the assessment has fewer questions/inputs.
+  const maxQuestionScore = answers.reduce((sum, answer) => {
+    const question = assessmentQuestions.find(q => q.id === answer.questionId);
+    if (!question) return sum;
+
+    // Scale questions: max 10 points; Multiple choice: max 15 points
+    return sum + (question.options && question.options.length > 0 ? 15 : 10);
+  }, 0);
+
+  const maxSubjectsScore = (profile.subjects?.length || 0) * 5; // each subject can add up to 5
+  const totalInterests = (profile.interests?.length || 0) + (profile.customInterest ? 1 : 0);
+  const maxInterestsScore = totalInterests * 8; // each interest can add 8
+
+  const maxPossibleScore = Math.max(1, maxQuestionScore + maxSubjectsScore + maxInterestsScore);
 
   // Create result with normalized scores
   const results = careers.map(career => ({
