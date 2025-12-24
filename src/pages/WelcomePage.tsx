@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Target, Brain, Rocket, LogIn, UserPlus, LayoutDashboard } from "lucide-react";
+import { Sparkles, Target, Map, Rocket, LogIn, UserPlus, LayoutDashboard, Brain } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const WelcomePage = () => {
@@ -94,7 +94,7 @@ const WelcomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-4xl w-full">
           {[
             { icon: Target, title: "Personalized Analysis", desc: "Based on your unique profile" },
-            { icon: Brain, title: "ML Algorithm", desc: "Decision Tree & KNN powered" },
+            { icon: Map, title: "Career Roadmaps", desc: "Step-by-step guidance to success" },
             { icon: Sparkles, title: "20+ Careers", desc: "Comprehensive recommendations" }
           ].map((feature, i) => (
             <div
