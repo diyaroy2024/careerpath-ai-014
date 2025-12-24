@@ -78,11 +78,82 @@ export function calculateCareerMatches(
     "Fashion": ["fashion-designer"]
   };
 
-  const allInterests = profile.customInterest
-    ? [...profile.interests, profile.customInterest]
-    : profile.interests;
+  // Custom interest keyword-to-career mappings (for "Others" description)
+  const customInterestKeywords: Record<string, string[]> = {
+    // Technology & Engineering
+    "robotics": ["engineer", "game-developer", "ar-vr-designer"],
+    "robot": ["engineer", "game-developer", "ar-vr-designer"],
+    "ai": ["engineer", "game-developer", "ui-ux-designer"],
+    "artificial intelligence": ["engineer", "game-developer", "ui-ux-designer"],
+    "machine learning": ["engineer", "game-developer"],
+    "coding": ["engineer", "game-developer", "ui-ux-designer"],
+    "programming": ["engineer", "game-developer", "ui-ux-designer"],
+    "software": ["engineer", "game-developer", "ui-ux-designer"],
+    "app": ["engineer", "game-developer", "ui-ux-designer"],
+    "web": ["engineer", "ui-ux-designer", "graphic-designer"],
+    "cyber": ["engineer"],
+    "hacking": ["engineer"],
+    "electronics": ["engineer", "ar-vr-designer"],
+    
+    // Creative & Arts
+    "music": ["content-creator", "video-editor", "motion-graphics"],
+    "audio": ["content-creator", "video-editor", "motion-graphics"],
+    "sound": ["video-editor", "motion-graphics", "vfx-artist"],
+    "photography": ["graphic-designer", "content-creator", "video-editor"],
+    "photo": ["graphic-designer", "content-creator", "video-editor"],
+    "animation": ["motion-graphics", "vfx-artist", "game-developer"],
+    "drawing": ["illustrator", "graphic-designer", "fashion-designer"],
+    "painting": ["illustrator", "graphic-designer"],
+    "sculpting": ["product-designer", "ar-vr-designer"],
+    "3d": ["ar-vr-designer", "game-developer", "vfx-artist", "motion-graphics"],
+    
+    // Science & Research
+    "astronomy": ["engineer", "doctor"],
+    "space": ["engineer"],
+    "research": ["doctor", "engineer"],
+    "biology": ["doctor"],
+    "chemistry": ["doctor", "engineer"],
+    "physics": ["engineer"],
+    "environment": ["sustainable-design", "engineer"],
+    "sustainability": ["sustainable-design"],
+    "green": ["sustainable-design"],
+    "eco": ["sustainable-design"],
+    
+    // Media & Entertainment
+    "youtube": ["content-creator", "video-editor"],
+    "streaming": ["content-creator", "video-editor"],
+    "podcast": ["content-creator", "creative-writer"],
+    "blog": ["creative-writer", "content-creator"],
+    "vlog": ["content-creator", "video-editor"],
+    "social media": ["content-creator", "graphic-designer"],
+    "influencer": ["content-creator", "video-editor"],
+    "cinema": ["video-editor", "vfx-artist", "motion-graphics"],
+    "movie": ["video-editor", "vfx-artist", "motion-graphics"],
+    "film": ["video-editor", "vfx-artist", "motion-graphics"],
+    
+    // Business & Finance
+    "startup": ["ca", "product-designer", "engineer"],
+    "entrepreneur": ["ca", "product-designer"],
+    "marketing": ["content-creator", "graphic-designer"],
+    "finance": ["ca"],
+    "investment": ["ca"],
+    "stock": ["ca"],
+    "trading": ["ca"],
+    
+    // Other specialized
+    "architecture": ["interior-designer", "ar-vr-designer", "sustainable-design"],
+    "interior": ["interior-designer"],
+    "cars": ["product-designer", "engineer"],
+    "automobile": ["product-designer", "engineer"],
+    "sports": ["content-creator", "video-editor"],
+    "fitness": ["content-creator"],
+    "cooking": ["content-creator", "product-designer"],
+    "food": ["content-creator", "product-designer"],
+    "travel": ["content-creator", "creative-writer"],
+  };
 
-  allInterests.forEach(interest => {
+  // Process standard interests first
+  profile.interests.forEach(interest => {
     const relatedCareers = interestCareerMap[interest];
     if (relatedCareers) {
       relatedCareers.forEach(careerId => {
@@ -90,24 +161,41 @@ export function calculateCareerMatches(
           careerScores[careerId] += 8; // Interest bonus
         }
       });
-      return;
     }
+  });
 
-    // If it's a custom interest (or an unmapped interest), do a lightweight keyword match
-    const keyword = interest.trim().toLowerCase();
-    if (!keyword) return;
-
-    careers.forEach(career => {
-      const matches =
-        career.title.toLowerCase().includes(keyword) ||
-        career.description.toLowerCase().includes(keyword) ||
-        career.skills.some(s => s.toLowerCase().includes(keyword));
-
-      if (matches) {
-        careerScores[career.id] += 6; // slightly lower than mapped interest
+  // Process custom interest with higher weightage (when "Others" is selected)
+  if (profile.customInterest) {
+    const customInput = profile.customInterest.trim().toLowerCase();
+    let matchedKeywords = 0;
+    
+    // Check against keyword mappings
+    Object.entries(customInterestKeywords).forEach(([keyword, relatedCareers]) => {
+      if (customInput.includes(keyword)) {
+        matchedKeywords++;
+        relatedCareers.forEach(careerId => {
+          if (careerScores[careerId] !== undefined) {
+            careerScores[careerId] += 10; // Higher weight for specific custom interest match
+          }
+        });
       }
     });
-  });
+    
+    // If no keyword matched, do a broader career description match
+    if (matchedKeywords === 0 && customInput.length > 2) {
+      careers.forEach(career => {
+        const matches =
+          career.title.toLowerCase().includes(customInput) ||
+          career.description.toLowerCase().includes(customInput) ||
+          career.skills.some(s => s.toLowerCase().includes(customInput)) ||
+          career.courses.some(c => c.toLowerCase().includes(customInput));
+
+        if (matches) {
+          careerScores[career.id] += 8; // Same weight as mapped interest for full description match
+        }
+      });
+    }
+  }
 
   // Calculate max possible score dynamically based on the user's actual inputs
   // This avoids artificially low percentages when the assessment has fewer questions/inputs.
@@ -120,10 +208,10 @@ export function calculateCareerMatches(
   }, 0);
 
   const maxSubjectsScore = (profile.subjects?.length || 0) * 5; // each subject can add up to 5
-  const totalInterests = (profile.interests?.length || 0) + (profile.customInterest ? 1 : 0);
-  const maxInterestsScore = totalInterests * 8; // each interest can add 8
+  const maxInterestsScore = (profile.interests?.length || 0) * 8; // each interest can add 8
+  const maxCustomInterestScore = profile.customInterest ? 10 : 0; // custom interest can add up to 10
 
-  const maxPossibleScore = Math.max(1, maxQuestionScore + maxSubjectsScore + maxInterestsScore);
+  const maxPossibleScore = Math.max(1, maxQuestionScore + maxSubjectsScore + maxInterestsScore + maxCustomInterestScore);
 
   // Create result with normalized scores
   const results = careers.map(career => ({
