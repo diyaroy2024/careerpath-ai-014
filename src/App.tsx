@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,8 +15,20 @@ import ResultsPage from "./pages/ResultsPage";
 import CareerDetailsPage from "./pages/CareerDetailsPage";
 import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
+import { evaluateModel, formatMetricsReport } from "@/lib/modelEvaluation";
 
 const queryClient = new QueryClient();
+
+// Run model evaluation on app load
+const runEvaluation = () => {
+  console.log("🔬 Running ML Model Evaluation...");
+  const metrics = evaluateModel();
+  console.log(formatMetricsReport(metrics));
+  console.log("📊 Raw Metrics Object:", metrics);
+};
+
+// Execute once
+runEvaluation();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
