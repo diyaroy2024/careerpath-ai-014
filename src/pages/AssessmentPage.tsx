@@ -8,14 +8,18 @@ import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/context/AppContext";
 import { assessmentQuestions } from "@/data/questions";
 import { calculateCareerMatches } from "@/lib/careerMatcher";
-import { ArrowLeft, ArrowRight, Sparkles, Brain } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Brain, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const AssessmentPage = () => {
   const navigate = useNavigate();
   const { userProfile, addAnswer, assessmentAnswers, setResults } = useAppContext();
+  const { user } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedValue, setSelectedValue] = useState<string>("");
+  const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
     if (!userProfile) {
@@ -34,7 +38,7 @@ const AssessmentPage = () => {
   const question = assessmentQuestions[currentQuestion];
   const progress = ((currentQuestion + 1) / assessmentQuestions.length) * 100;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!selectedValue) {
       toast.error("Please select an answer to continue");
       return;
@@ -49,14 +53,65 @@ const AssessmentPage = () => {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedValue("");
     } else {
-      // Calculate results
+      // Calculate results using ML algorithms (KNN + Decision Tree)
+      setIsCalculating(true);
+      
       const allAnswers = [
         ...assessmentAnswers.filter(a => a.questionId !== question.id),
         { questionId: question.id, answer: parseInt(selectedValue) }
       ];
-      const results = calculateCareerMatches(allAnswers, userProfile!);
-      setResults(results);
-      navigate('/results');
+
+      try {
+        // Call the edge function with KNN + Decision Tree algorithms
+        const sessionId = crypto.randomUUID();
+        const { data, error } = await supabase.functions.invoke('career-recommendations', {
+          body: {
+            profile: {
+              interests: userProfile?.interests || [],
+              preferredSubjects: userProfile?.subjects?.map(s => s.subject) || [],
+              educationLevel: userProfile?.class || 'high_school',
+              customInterest: userProfile?.customInterest || ''
+            },
+            answers: allAnswers.map(a => {
+              const q = assessmentQuestions.find(q => q.id === a.questionId);
+              return {
+                questionId: a.questionId,
+                answer: a.answer.toString(),
+                relatedCareers: q?.relatedCareers || []
+              };
+            }),
+            userId: user?.id || null,
+            sessionId
+          }
+        });
+
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
+        }
+
+        if (data?.recommendations && data.recommendations.length > 0) {
+          console.log(`ML Results: ${data.recommendations.length} careers using ${data.algorithms?.join(' + ')}`);
+          setResults(data.recommendations);
+          toast.success('Career analysis complete using KNN + Decision Tree algorithms');
+          navigate('/results');
+        } else {
+          // Fallback to local calculation if edge function returns empty
+          console.log('Falling back to local calculation');
+          const results = calculateCareerMatches(allAnswers, userProfile!);
+          setResults(results);
+          navigate('/results');
+        }
+      } catch (error) {
+        console.error('ML recommendation error:', error);
+        toast.error('Using local analysis as fallback');
+        // Fallback to local calculation
+        const results = calculateCareerMatches(allAnswers, userProfile!);
+        setResults(results);
+        navigate('/results');
+      } finally {
+        setIsCalculating(false);
+      }
     }
   };
 
@@ -166,9 +221,18 @@ const AssessmentPage = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button variant="hero" size="lg" onClick={handleNext} className="group">
-            {currentQuestion === assessmentQuestions.length - 1 ? "See Results" : "Next"}
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          <Button variant="hero" size="lg" onClick={handleNext} disabled={isCalculating} className="group">
+            {isCalculating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing with ML...
+              </>
+            ) : (
+              <>
+                {currentQuestion === assessmentQuestions.length - 1 ? "See Results" : "Next"}
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </>
+            )}
           </Button>
         </div>
       </main>
